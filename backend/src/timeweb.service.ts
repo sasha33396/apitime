@@ -1,12 +1,11 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { Account } from './accounts.service';
 
 const API_BASE = 'https://api.timeweb.cloud';
 
-export interface DnsRecord {
+export interface ARecord {
   id: number;
-  type: string;
-  subdomain: string;
+  fqdn: string; // полное имя, где живёт запись (корень или поддомен)
   value: string;
   ttl: number;
 }
@@ -71,46 +70,95 @@ export class TimewebService {
     return data;
   }
 
-  async listARecords(acc: Account): Promise<DnsRecord[]> {
-    const data = await this.call(
-      acc.token,
-      'GET',
-      `/api/v1/domains/${acc.domain}/dns-records?limit=500`,
-    );
-    const records: any[] = data?.dns_records ?? [];
-    return records
-      .map((r) => ({
-        id: r.id,
-        type: r.type,
-        subdomain: r.subdomain || r.fqdn || '',
-        value: extractValue(r),
-        ttl: r.ttl,
-      }))
-      .filter((r) => r.type === 'A');
+  /** Список fqdn'ов домена: сам домен + все его поддомены. */
+  private async listFqdns(acc: Account): Promise<string[]> {
+    const fqdns = new Set<string>([acc.domain]);
+    try {
+      const info = await this.call(
+        acc.token,
+        'GET',
+        `/api/v1/domains/${acc.domain}`,
+      );
+      const subs: any[] = info?.domain?.subdomains ?? [];
+      for (const s of subs) {
+        const fqdn = typeof s === 'string' ? s : s?.fqdn;
+        if (fqdn) fqdns.add(fqdn);
+      }
+    } catch {
+      // если не удалось получить инфо о домене — работаем хотя бы с корнем
+    }
+    return [...fqdns];
   }
 
-  create(acc: Account, value: string, ttl: number) {
-    return this.call(acc.token, 'POST', `/api/v2/domains/${acc.domain}/dns-records`, {
+  private async recordsFor(acc: Account, fqdn: string): Promise<ARecord[]> {
+    try {
+      const data = await this.call(
+        acc.token,
+        'GET',
+        `/api/v1/domains/${fqdn}/dns-records?limit=500`,
+      );
+      const recs: any[] = data?.dns_records ?? [];
+      return recs
+        .filter((r) => r.type === 'A')
+        .map((r) => ({
+          id: r.id,
+          fqdn,
+          value: extractValue(r),
+          ttl: r.ttl ?? 600,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  /** Все A-записи домена и его поддоменов. */
+  async listARecords(acc: Account): Promise<ARecord[]> {
+    const fqdns = await this.listFqdns(acc);
+    const groups = await Promise.all(fqdns.map((f) => this.recordsFor(acc, f)));
+
+    // дедупликация по id на случай пересечений
+    const byId = new Map<number, ARecord>();
+    for (const rec of groups.flat()) byId.set(rec.id, rec);
+
+    return [...byId.values()].sort((a, b) => {
+      if (a.fqdn === acc.domain) return -1; // корень сверху
+      if (b.fqdn === acc.domain) return 1;
+      return a.fqdn.localeCompare(b.fqdn);
+    });
+  }
+
+  /** Проверяем, что fqdn принадлежит домену аккаунта (защита от чужих доменов). */
+  private assertOwned(acc: Account, fqdn: string) {
+    if (fqdn !== acc.domain && !fqdn.endsWith(`.${acc.domain}`)) {
+      throw new BadRequestException(`fqdn ${fqdn} не относится к домену ${acc.domain}`);
+    }
+  }
+
+  create(acc: Account, fqdn: string, value: string, ttl: number) {
+    this.assertOwned(acc, fqdn);
+    return this.call(acc.token, 'POST', `/api/v2/domains/${fqdn}/dns-records`, {
       type: 'A',
       value,
       ttl,
     });
   }
 
-  update(acc: Account, id: number, value: string, ttl: number) {
+  update(acc: Account, fqdn: string, id: number, value: string, ttl: number) {
+    this.assertOwned(acc, fqdn);
     return this.call(
       acc.token,
       'PATCH',
-      `/api/v2/domains/${acc.domain}/dns-records/${id}`,
+      `/api/v2/domains/${fqdn}/dns-records/${id}`,
       { type: 'A', value, ttl },
     );
   }
 
-  remove(acc: Account, id: number) {
+  remove(acc: Account, fqdn: string, id: number) {
+    this.assertOwned(acc, fqdn);
     return this.call(
       acc.token,
       'DELETE',
-      `/api/v2/domains/${acc.domain}/dns-records/${id}`,
+      `/api/v2/domains/${fqdn}/dns-records/${id}`,
     );
   }
 }

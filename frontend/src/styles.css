@@ -75,6 +75,10 @@ header {
   font-size: 14px;
   width: 150px;
 }
+.addrow .sub-input {
+  flex: 1 1 160px;
+  width: auto;
+}
 button {
   padding: 7px 12px;
   border: 0;

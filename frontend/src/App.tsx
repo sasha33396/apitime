@@ -9,8 +9,7 @@ interface AccountInfo {
 
 interface Rec {
   id: number;
-  type: string;
-  subdomain: string;
+  fqdn: string;
   value: string;
   ttl: number;
 }
@@ -28,7 +27,6 @@ export default function App() {
     setTimeout(() => setToast(''), 2600);
   }, []);
 
-  // Если где-то прилетел 401 — значит сессия кончилась, показываем вход.
   const onUnauthorized = useCallback(() => setAuth('out'), []);
 
   const loadAccounts = useCallback(async () => {
@@ -43,7 +41,6 @@ export default function App() {
     }
   }, [onUnauthorized]);
 
-  // Проверка сессии при загрузке.
   useEffect(() => {
     (async () => {
       try {
@@ -123,6 +120,7 @@ function AccountCard({
 }) {
   const [recs, setRecs] = useState<Rec[] | null>(null);
   const [error, setError] = useState('');
+  const [newSub, setNewSub] = useState('');
   const [newIp, setNewIp] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -148,21 +146,24 @@ function AccountCard({
 
   async function onSave(r: Rec, value: string) {
     try {
-      await api('PATCH', `/api/records?account=${index}&id=${r.id}`, {
-        value,
-        ttl: r.ttl || 600,
-      });
-      notify(`Сохранено: ${value}`);
+      await api(
+        'PATCH',
+        `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}`,
+        { value, ttl: r.ttl || 600 },
+      );
+      notify(`Сохранено: ${r.fqdn} → ${value}`);
     } catch (e: any) {
       handleError(e);
     }
   }
 
   async function onDelete(r: Rec) {
-    const label = r.subdomain && r.subdomain !== info.domain ? r.subdomain : '@';
-    if (!confirm(`Удалить A-запись ${label} (${r.value})?`)) return;
+    if (!confirm(`Удалить A-запись ${r.fqdn} (${r.value})?`)) return;
     try {
-      await api('DELETE', `/api/records?account=${index}&id=${r.id}`);
+      await api(
+        'DELETE',
+        `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}`,
+      );
       notify('Удалено');
       load();
     } catch (e: any) {
@@ -178,9 +179,11 @@ function AccountCard({
     setBusy(true);
     try {
       await api('POST', `/api/records?account=${index}`, {
+        subdomain: newSub.trim(),
         value: newIp.trim(),
         ttl: 600,
       });
+      setNewSub('');
       setNewIp('');
       notify('Добавлено');
       load();
@@ -203,7 +206,7 @@ function AccountCard({
       {recs &&
         recs.map((r) => (
           <RecordRow
-            key={r.id}
+            key={`${r.fqdn}-${r.id}`}
             rec={r}
             domain={info.domain}
             onSave={onSave}
@@ -212,7 +215,12 @@ function AccountCard({
         ))}
       <div className="addrow">
         <span className="tag">A</span>
-        <span className="sub">новая запись (корень домена)</span>
+        <input
+          className="sub-input"
+          value={newSub}
+          onChange={(e) => setNewSub(e.target.value)}
+          placeholder="поддомен (пусто = корень)"
+        />
         <input
           value={newIp}
           onChange={(e) => setNewIp(e.target.value)}
@@ -239,7 +247,7 @@ function RecordRow({
 }) {
   const [value, setValue] = useState(rec.value);
   const [busy, setBusy] = useState(false);
-  const sub = rec.subdomain && rec.subdomain !== domain ? rec.subdomain : '@ (корень)';
+  const label = rec.fqdn === domain ? '@ (корень)' : rec.fqdn;
 
   async function handleSave() {
     setBusy(true);
@@ -250,7 +258,9 @@ function RecordRow({
   return (
     <div className="rec">
       <span className="tag">A</span>
-      <span className="sub">{sub}</span>
+      <span className="sub" title={rec.fqdn}>
+        {label}
+      </span>
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}

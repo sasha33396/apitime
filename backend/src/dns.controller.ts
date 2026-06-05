@@ -14,7 +14,13 @@ import { Account, AccountsService } from './accounts.service';
 import { TimewebService } from './timeweb.service';
 import { AuthGuard } from './auth/auth.guard';
 
-interface RecordBody {
+interface UpdateBody {
+  value?: string;
+  ttl?: number;
+}
+
+interface CreateBody {
+  subdomain?: string; // имя поддомена (пусто = корень). Можно и полное fqdn.
   value?: string;
   ttl?: number;
 }
@@ -33,6 +39,14 @@ export class DnsController {
     return acc;
   }
 
+  /** Собирает полное имя из введённого поддомена. */
+  private buildFqdn(acc: Account, raw?: string): string {
+    const name = (raw || '').trim().replace(/\.+$/, '').toLowerCase();
+    if (!name) return acc.domain;
+    if (name === acc.domain || name.endsWith(`.${acc.domain}`)) return name;
+    return `${name}.${acc.domain}`;
+  }
+
   @Get('accounts')
   list() {
     return { accounts: this.accounts.publicList() };
@@ -46,31 +60,39 @@ export class DnsController {
   }
 
   @Post('records')
-  async create(@Query('account') account: string, @Body() body: RecordBody) {
+  async create(@Query('account') account: string, @Body() body: CreateBody) {
     const acc = this.resolve(account);
     const value = (body?.value || '').trim();
     if (!value) throw new BadRequestException('Не указан IP-адрес');
-    await this.tw.create(acc, value, body?.ttl || 600);
+    const fqdn = this.buildFqdn(acc, body?.subdomain);
+    await this.tw.create(acc, fqdn, value, body?.ttl || 600);
     return { ok: true };
   }
 
   @Patch('records')
   async update(
     @Query('account') account: string,
+    @Query('fqdn') fqdn: string,
     @Query('id') id: string,
-    @Body() body: RecordBody,
+    @Body() body: UpdateBody,
   ) {
     const acc = this.resolve(account);
     const value = (body?.value || '').trim();
     if (!value) throw new BadRequestException('Не указан IP-адрес');
-    await this.tw.update(acc, Number(id), value, body?.ttl || 600);
+    if (!fqdn) throw new BadRequestException('Не указан fqdn записи');
+    await this.tw.update(acc, fqdn, Number(id), value, body?.ttl || 600);
     return { ok: true };
   }
 
   @Delete('records')
-  async remove(@Query('account') account: string, @Query('id') id: string) {
+  async remove(
+    @Query('account') account: string,
+    @Query('fqdn') fqdn: string,
+    @Query('id') id: string,
+  ) {
     const acc = this.resolve(account);
-    await this.tw.remove(acc, Number(id));
+    if (!fqdn) throw new BadRequestException('Не указан fqdn записи');
+    await this.tw.remove(acc, fqdn, Number(id));
     return { ok: true };
   }
 }
