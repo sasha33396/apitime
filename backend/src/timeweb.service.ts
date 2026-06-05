@@ -75,7 +75,7 @@ export class TimewebService {
     const data = await this.call(
       acc.token,
       'GET',
-      `/api/v1/domains/${acc.domain}/dns-records?limit=1000`,
+      `/api/v1/domains/${acc.domain}/dns-records?limit=500`,
     );
     const records: any[] = data?.dns_records ?? [];
     return records
