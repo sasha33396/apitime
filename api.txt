@@ -1,0 +1,1544 @@
+Домены
+В Timeweb Cloud доступна регистрация и продление доменов более чем в 350 зонах.
+
+В зависимости от выбранной зоны, домен может быть зарегистрирован через регистратора Таймвэб.Домены или через одного из наших партнеров.
+
+Подробнее о доменах – в нашей базе знаний.
+
+Получение списка всех доменов
+Чтобы получить список всех доменов на вашем аккаунте, отправьте GET-запрос на /api/v1/domains.
+
+Тело ответа будет представлять собой объект JSON с ключом domains.
+
+Авторизация:
+Bearer
+query Parameters
+limit	
+integer
+По-умолчанию: 100
+Обозначает количество записей, которое необходимо вернуть.
+
+offset	
+integer
+По-умолчанию: 0
+Указывает на смещение относительно начала списка.
+
+idn_name	
+string
+Пример: idn_name=xn--e1afmkfd.xn--p1ai
+Интернационализированное доменное имя.
+
+linked_ip	
+string
+Пример: linked_ip=192.168.1.1
+Привязанный к домену IP-адрес.
+
+order	
+string
+Enum: "asc" "dsc"
+Пример: order=asc
+Порядок доменов.
+
+sort	
+string
+Значение: "idn_name"
+Пример: sort=idn_name
+Сортировка доменов.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом domains.
+400 Некорректный запрос
+401 Не авторизован
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+package main
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+)
+
+func main() {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://api.timeweb.cloud/api/v1/domains", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer " + os.Getenv("TIMEWEB_CLOUD_TOKEN"))
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	bodyText, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n", bodyText)
+}
+Примеры ответа
+200400401429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"domains": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получение информации о домене
+Чтобы отобразить информацию об отдельном домене, отправьте запрос GET на /api/v1/domains/{fqdn}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом domain.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains/{fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"domain": {
+"allowed_buy_periods": [],
+"days_left": 100,
+"domain_status": "paid",
+"expiration": "0000-00-00",
+"fqdn": "somedomain.ru",
+"id": 123,
+"avatar_link": "https://urltoimage.com/avatars/image.png",
+"is_autoprolong_enabled": true,
+"is_premium": true,
+"is_prolong_allowed": true,
+"is_technical": true,
+"is_whois_privacy_enabled": true,
+"linked_ip": "192.168.1.1",
+"paid_till": "2023-01-27",
+"person_id": 123,
+"premium_prolong_cost": null,
+"provider": "TimewebVirtreg",
+"request_status": "registration_request",
+"subdomains": [],
+"tld_id": 2365
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Включение/выключение автопродления домена
+Чтобы включить/выключить автопродление домена, отправьте запрос PATCH на /api/v1/domains/{fqdn}, передав в теле запроса параметр is_autoprolong_enabled
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Схема тела запроса: application/json
+is_autoprolong_enabled	
+boolean
+Это логическое значение, которое показывает, включено ли автопродление домена.
+
+linked_ip	
+string or null
+Привязанный к домену IP-адрес.
+
+Ответы
+200 Объект JSON c ключом domain
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+patch
+/api/v1/domains/{fqdn}
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+
+Копировать
+{
+"is_autoprolong_enabled": true,
+"linked_ip": "192.168.1.1"
+}
+Примеры ответа
+200400401404409429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"domain": {
+"allowed_buy_periods": [],
+"days_left": 100,
+"domain_status": "paid",
+"expiration": "0000-00-00",
+"fqdn": "somedomain.ru",
+"id": 123,
+"avatar_link": "https://urltoimage.com/avatars/image.png",
+"is_autoprolong_enabled": true,
+"is_premium": true,
+"is_prolong_allowed": true,
+"is_technical": true,
+"is_whois_privacy_enabled": true,
+"linked_ip": "192.168.1.1",
+"paid_till": "2023-01-27",
+"person_id": 123,
+"premium_prolong_cost": null,
+"provider": "TimewebVirtreg",
+"request_status": "registration_request",
+"subdomains": [],
+"tld_id": 2365
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Удаление домена
+Чтобы удалить домен, отправьте запрос DELETE на /api/v1/domains/{fqdn}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Ответы
+204 Домен успешно удален.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+delete
+/api/v1/domains/{fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru"
+Примеры ответа
+400401404409429500
+Content type
+application/json
+
+Копировать
+{
+"status_code": 400,
+"message": "Value must be a number conforming to the specified constraints",
+"error_code": "bad_request",
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Добавить информацию о DNS-записи для домена или поддомена
+Чтобы добавить информацию о DNS-записи для домена или поддомена, отправьте запрос POST на /api/v2/domains/{fqdn}/dns-records, задав необходимые атрибуты.
+
+DNS-запись будет добавлена с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о добавленной DNS-записи.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена. Для создания записи на основном домене передайте имя домена (например, somedomain.ru). Для создания записи на поддомене передайте полное доменное имя включая поддомен (например, sub.somedomain.ru).
+
+Схема тела запроса: application/json
+One of A записьAAAA записьTXT записьCNAME записьMX записьSRV запись
+type
+required
+string
+Значение: "A"
+Тип DNS-записи.
+
+value
+required
+string
+IPv4 адрес.
+
+ttl	
+number
+Время жизни DNS-записи в секундах.
+
+app_id	
+number
+Идентификатор приложения в App Platform, к которому будет привязан домен или поддомен.
+
+Ответы
+201 Ответ будет представлять собой объект JSON c ключом dns_record.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+post
+/api/v2/domains/{fqdn}/dns-records
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+Пример
+
+A запись
+A запись
+
+Копировать
+{
+"type": "A",
+"value": "192.168.1.0",
+"ttl": 600,
+"app_id": 1
+}
+Примеры ответа
+201400401404409429500
+Content type
+application/json
+Пример
+
+A запись
+A запись
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"dns_record": {
+"id": 123,
+"type": "A",
+"fqdn": "somedomain.ru",
+"data": {},
+"ttl": 600
+}
+}
+Обновить информацию о DNS-записи домена или поддомена
+Чтобы обновить информацию о DNS-записи для домена или поддомена, отправьте запрос PATCH на /api/v2/domains/{fqdn}/dns-records/{record_id}, задав необходимые атрибуты.
+
+DNS-запись будет обновлена с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией об обновленной DNS-записи.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена. Для создания записи на основном домене передайте имя домена (например, somedomain.ru). Для создания записи на поддомене передайте полное доменное имя включая поддомен (например, sub.somedomain.ru).
+
+record_id
+required
+integer
+Пример: 123
+ID DNS-записи домена или поддомена.
+
+Схема тела запроса: application/json
+One of A записьAAAA записьTXT записьCNAME записьMX записьSRV запись
+type
+required
+string
+Значение: "A"
+Тип DNS-записи.
+
+value
+required
+string
+IPv4 адрес.
+
+ttl	
+number
+Время жизни DNS-записи в секундах.
+
+app_id	
+number
+Идентификатор приложения в App Platform, к которому будет привязан домен или поддомен.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом dns_record.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+patch
+/api/v2/domains/{fqdn}/dns-records/{record_id}
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+Пример
+
+A запись
+A запись
+
+Копировать
+{
+"type": "A",
+"value": "192.168.1.0",
+"ttl": 600,
+"app_id": 1
+}
+Примеры ответа
+200400401404409429500
+Content type
+application/json
+Пример
+
+A запись
+A запись
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"dns_record": {
+"id": 123,
+"type": "A",
+"fqdn": "somedomain.ru",
+"data": {},
+"ttl": 600
+}
+}
+Удалить информацию о DNS-записи для домена или поддомена
+Чтобы удалить информацию о DNS-записи для домена или поддомена, отправьте запрос DELETE на /api/v2/domains/{fqdn}/dns-records/{record_id}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена. Для создания записи на основном домене передайте имя домена (например, somedomain.ru). Для создания записи на поддомене передайте полное доменное имя включая поддомен (например, sub.somedomain.ru).
+
+record_id
+required
+integer
+Пример: 123
+ID DNS-записи домена или поддомена.
+
+Ответы
+204 Информация о DNS-записи успешно удалена.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+delete
+/api/v2/domains/{fqdn}/dns-records/{record_id}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v2/domains/somedomain.ru/dns-records/123"
+Примеры ответа
+400401404429500
+Content type
+application/json
+
+Копировать
+{
+"status_code": 400,
+"message": "Value must be a number conforming to the specified constraints",
+"error_code": "bad_request",
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получить информацию обо всех пользовательских DNS-записях домена или поддомена
+Чтобы получить информацию обо всех пользовательских DNS-записях домена или поддомена, отправьте запрос GET на /api/v1/domains/{fqdn}/dns-records.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена.
+
+query Parameters
+limit	
+integer
+По-умолчанию: 100
+Обозначает количество записей, которое необходимо вернуть.
+
+offset	
+integer
+По-умолчанию: 0
+Указывает на смещение относительно начала списка.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом dns_records.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains/{fqdn}/dns-records
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/dns-records"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"dns_records": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Добавить информацию о DNS-записи для домена или поддомена Устарел
+Чтобы добавить информацию о DNS-записи для домена или поддомена, отправьте запрос POST на /api/v1/domains/{fqdn}/dns-records, задав необходимые атрибуты.
+
+DNS-запись будет добавлена с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о добавленной DNS-записи.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена.
+
+Схема тела запроса: application/json
+priority	
+number
+Приоритет DNS-записи.
+
+subdomain	
+string
+Полное имя поддомена.
+
+type
+required
+string
+Enum: "TXT" "SRV" "CNAME" "AAAA" "MX" "A"
+Тип DNS-записи.
+
+value
+required
+string
+Значение DNS-записи.
+
+ttl	
+number
+Время жизни DNS-записи.
+
+Ответы
+201 Ответ будет представлять собой объект JSON c ключом dns_record.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+post
+/api/v1/domains/{fqdn}/dns-records
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+
+Копировать
+{
+"priority": 0,
+"subdomain": "sub.somedomain.ru",
+"type": "A",
+"value": "192.168.111.123",
+"ttl": 600
+}
+Примеры ответа
+201400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"dns_record": {
+"type": "A",
+"id": 123,
+"data": {},
+"ttl": 600
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Обновить информацию о DNS-записи домена или поддомена Устарел
+Чтобы обновить информацию о DNS-записи для домена или поддомена, отправьте запрос PATCH на /api/v1/domains/{fqdn}/dns-records/{record_id}, задав необходимые атрибуты.
+
+DNS-запись будет обновлена с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией об добавленной DNS-записи.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена.
+
+record_id
+required
+integer
+Пример: 123
+ID DNS-записи домена или поддомена.
+
+Схема тела запроса: application/json
+priority	
+number
+Приоритет DNS-записи.
+
+subdomain	
+string
+Полное имя поддомена.
+
+type
+required
+string
+Enum: "TXT" "SRV" "CNAME" "AAAA" "MX" "A"
+Тип DNS-записи.
+
+value
+required
+string
+Значение DNS-записи.
+
+ttl	
+number
+Время жизни DNS-записи.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом dns_record.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+patch
+/api/v1/domains/{fqdn}/dns-records/{record_id}
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+
+Копировать
+{
+"priority": 0,
+"subdomain": "sub.somedomain.ru",
+"type": "A",
+"value": "192.168.111.123",
+"ttl": 600
+}
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"dns_record": {
+"type": "A",
+"id": 123,
+"data": {},
+"ttl": 600
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Удалить информацию о DNS-записи для домена или поддомена Устарел
+Чтобы удалить информацию о DNS-записи для домена или поддомена, отправьте запрос DELETE на /api/v1/domains/{fqdn}/dns-records/{record_id}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена.
+
+record_id
+required
+integer
+Пример: 123
+ID DNS-записи домена или поддомена.
+
+Ответы
+204 Информация о DNS-записи успешно удалена.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+delete
+/api/v1/domains/{fqdn}/dns-records/{record_id}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/dns-records/123"
+Примеры ответа
+400401404429500
+Content type
+application/json
+
+Копировать
+{
+"status_code": 400,
+"message": "Value must be a number conforming to the specified constraints",
+"error_code": "bad_request",
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получить информацию обо всех DNS-записях по умолчанию домена или поддомена
+Чтобы получить информацию обо всех DNS-записях по умолчанию домена или поддомена, отправьте запрос GET на /api/v1/domains/{fqdn}/default-dns-records.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена или поддомена.
+
+query Parameters
+limit	
+integer
+По-умолчанию: 100
+Обозначает количество записей, которое необходимо вернуть.
+
+offset	
+integer
+По-умолчанию: 0
+Указывает на смещение относительно начала списка.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом dns_records.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains/{fqdn}/default-dns-records
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/default-dns-records"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"dns_records": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Добавление поддомена
+Чтобы добавить поддомен, отправьте запрос POST на /api/v1/domains/{fqdn}/subdomains/{subdomain_fqdn}, задав необходимые атрибуты.
+
+Поддомен будет добавлен с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о добавленном поддомене.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+subdomain_fqdn
+required
+string
+Пример: sub.somedomain.ru
+Полное имя поддомена.
+
+Ответы
+201 Ответ будет представлять собой объект JSON c ключом subdomain.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+post
+/api/v1/domains/{fqdn}/subdomains/{subdomain_fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/subdomains/sub.somedomain.ru"
+Примеры ответа
+201400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"subdomain": {
+"fqdn": "sub.somedomain.ru",
+"id": 123,
+"linked_ip": null
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Удаление поддомена
+Чтобы удалить поддомен, отправьте запрос DELETE на /api/v1/domains/{fqdn}/subdomains/{subdomain_fqdn}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+subdomain_fqdn
+required
+string
+Пример: sub.somedomain.ru
+Полное имя поддомена.
+
+Ответы
+204 Поддомен успешно удален
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+delete
+/api/v1/domains/{fqdn}/subdomains/{subdomain_fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/subdomains/sub.somedomain.ru"
+Примеры ответа
+400401404409429500
+Content type
+application/json
+
+Копировать
+{
+"status_code": 400,
+"message": "Value must be a number conforming to the specified constraints",
+"error_code": "bad_request",
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получение списка name-серверов домена
+Чтобы получить список name-серверов домена, отправьте запрос GET на /api/v1/domains/{fqdn}/name-servers.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом name_servers.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains/{fqdn}/name-servers
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains/somedomain.ru/name-servers"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"name_servers": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Изменение name-серверов домена
+Чтобы изменить name-серверы домена, отправьте запрос PUT на /api/v1/domains/{fqdn}/name-servers, задав необходимые атрибуты.
+
+Name-серверы будут изменены с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о name-серверах домена.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Схема тела запроса: application/json
+name_servers
+required
+Массив objects
+Список новых name-серверов для домена
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом name_servers.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+put
+/api/v1/domains/{fqdn}/name-servers
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"name_servers": [
+{}
+]
+}
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"name_servers": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получение списка заявок на регистрацию/продление/трансфер домена
+Чтобы получить список заявок на регистрацию/продление/трансфер домена, отправьте запрос GET на /api/v1/domains-requests.
+
+Авторизация:
+Bearer
+query Parameters
+person_id	
+integer
+Пример: person_id=123
+ID администратора, на которого зарегистрирован домен.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом requests.
+400 Некорректный запрос
+401 Не авторизован
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains-requests
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains-requests"
+Примеры ответа
+200400401429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"requests": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Создание заявки на регистрацию/продление/трансфер домена
+Чтобы создать заявку на регистрацию/продление/трансфер домена, отправьте POST-запрос в api/v1/domains-requests, задав необходимые атрибуты.
+
+Заявка будет создана с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о созданной заявке.
+
+Авторизация:
+Bearer
+Схема тела запроса: application/json
+One of Заявка на регистрацию доменаЗаявка на продление доменаЗаявка на перенос домена
+action
+required
+string
+Значение: "register"
+Тип создаваемой заявки.
+
+fqdn
+required
+string
+Полное имя домена.
+
+is_autoprolong_enabled	
+boolean
+Это логическое значение, которое показывает, включено ли автопродление домена.
+
+is_whois_privacy_enabled	
+boolean
+Это логическое значение, которое показывает, включено ли скрытие данных администратора домена для whois. Опция недоступна для доменов в зонах .ru и .рф.
+
+period	
+string (domain-payment-period)
+Enum: "P1Y" "P2Y" "P3Y" "P4Y" "P5Y" "P6Y" "P7Y" "P8Y" "P9Y" "P10Y"
+Период оплаты (для доменов в зонах .ru и .рф только 1-3 года).
+
+person_id
+required
+number
+ID администратора, на которого регистрируется домен.
+
+Ответы
+201 Ответ будет представлять собой объект JSON c ключом request.
+400 Некорректный запрос
+401 Не авторизован
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+post
+/api/v1/domains-requests
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+Пример
+
+Заявка на регистрацию домена
+Заявка на регистрацию домена
+
+Копировать
+{
+"action": "register",
+"fqdn": "somedomain.ru",
+"is_autoprolong_enabled": true,
+"is_whois_privacy_enabled": true,
+"period": "P1Y",
+"person_id": 123
+}
+Примеры ответа
+201400401409429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"request": {
+"account_id": "cp78562",
+"auth_code": "code",
+"date": "2023-01-31T12:51:00.710Z",
+"domain_bundle_id": null,
+"error_code_transfer": null,
+"fqdn": "somedomain.com",
+"group_id": 123,
+"id": 123,
+"is_antispam_enabled": false,
+"is_autoprolong_enabled": true,
+"is_whois_privacy_enabled": true,
+"message": "message",
+"money_source": "use",
+"period": "P1Y",
+"person_id": 123,
+"prime": null,
+"soon_expire": 30,
+"sort_order": 123,
+"type": "request"
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получение заявки на регистрацию/продление/трансфер домена
+Чтобы получить заявку на регистрацию/продление/трансфер домена, отправьте запрос GET на /api/v1/domains-requests/{request_id}.
+
+Авторизация:
+Bearer
+path Parameters
+request_id
+required
+integer
+Пример: 123
+ID заявки на регистрацию/продление/трансфер домена.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом request.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/domains-requests/{request_id}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/domains-requests/123"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"request": {
+"account_id": "cp78562",
+"auth_code": "code",
+"date": "2023-01-31T12:51:00.710Z",
+"domain_bundle_id": null,
+"error_code_transfer": null,
+"fqdn": "somedomain.com",
+"group_id": 123,
+"id": 123,
+"is_antispam_enabled": false,
+"is_autoprolong_enabled": true,
+"is_whois_privacy_enabled": true,
+"message": "message",
+"money_source": "use",
+"period": "P1Y",
+"person_id": 123,
+"prime": null,
+"soon_expire": 30,
+"sort_order": 123,
+"type": "request"
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Оплата/обновление заявки на регистрацию/продление/трансфер домена
+Чтобы оплатить/обновить заявку на регистрацию/продление/трансфер домена, отправьте запрос PATCH на /api/v1/domains-requests/{request_id}, задав необходимые атрибуты.
+
+Заявка будет обновлена с использованием предоставленной информации. Тело ответа будет содержать объект JSON с информацией о обновленной заявке.
+
+Авторизация:
+Bearer
+path Parameters
+request_id
+required
+integer
+Пример: 123
+ID заявки на регистрацию/продление/трансфер домена.
+
+Схема тела запроса: application/json
+One of Оплата заявки на продление/регистрацию домена с баланса аккаунтаОплата заявки на продление/регистрацию домена при помощи платежной системыОбновление заявки на перенос доменаОплата заявки на продление/регистрацию домена бонусом
+money_source
+required
+string
+Значение: "use"
+Тип создаваемой заявки.
+
+person_id	
+number
+ID администратора, на которого зарегистрирован домен.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом request.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+patch
+/api/v1/domains-requests/{request_id}
+Примеры запроса
+PayloadcURLJavaScriptNodePythonPHPGoJava
+Content type
+application/json
+Пример
+
+Оплата заявки на продление/регистрацию домена с баланса аккаунта
+Оплата заявки на продление/регистрацию домена с баланса аккаунта
+
+Копировать
+{
+"money_source": "use",
+"person_id": 123
+}
+Примеры ответа
+200400401404409429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"request": {
+"account_id": "cp78562",
+"auth_code": "code",
+"date": "2023-01-31T12:51:00.710Z",
+"domain_bundle_id": null,
+"error_code_transfer": null,
+"fqdn": "somedomain.com",
+"group_id": 123,
+"id": 123,
+"is_antispam_enabled": false,
+"is_autoprolong_enabled": true,
+"is_whois_privacy_enabled": true,
+"message": "message",
+"money_source": "use",
+"period": "P1Y",
+"person_id": 123,
+"prime": null,
+"soon_expire": 30,
+"sort_order": 123,
+"type": "request"
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получить информацию о доменных зонах
+Чтобы получить информацию о доменных зонах, отправьте запрос GET на /api/v1/tlds.
+
+Авторизация:
+Bearer
+query Parameters
+is_published	
+boolean
+Пример: is_published=true
+Это логическое значение, которое показывает, опубликована ли доменная зона.
+
+is_registered	
+boolean
+Пример: is_registered=true
+Это логическое значение, которое показывает, зарегистрирована ли доменная зона.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом top_level_domains.
+400 Некорректный запрос
+401 Не авторизован
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/tlds
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/tlds"
+Примеры ответа
+200400401429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"top_level_domains": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Получить информацию о доменной зоне по ID
+Чтобы получить информацию о доменной зоне по ID, отправьте запрос GET на /api/v1/tlds/{tld_id}.
+
+Авторизация:
+Bearer
+path Parameters
+tld_id
+required
+integer
+Пример: 123
+ID доменной зоны.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом top_level_domain.
+400 Некорректный запрос
+401 Не авторизован
+404 Не найдено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/tlds/{tld_id}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/tlds/123"
+Примеры ответа
+200400401404429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"top_level_domain": {
+"allowed_buy_periods": [],
+"early_renew_period": 60,
+"grace_period": 30,
+"id": 123,
+"is_published": true,
+"is_registered": true,
+"is_whois_privacy_default_enabled": true,
+"is_whois_privacy_enabled": true,
+"name": "ru",
+"price": 100,
+"prolong_price": 100,
+"registrar": "TimewebVirtreg",
+"transfer": 0,
+"whois_privacy_price": 300
+},
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Проверить, доступен ли домен для регистрации
+Чтобы проверить, доступен ли домен для регистрации, отправьте запрос GET на /api/v1/check-domain/{fqdn}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Ответы
+200 Ответ будет представлять собой объект JSON c ключом is_domain_available.
+400 Некорректный запрос
+401 Не авторизован
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v1/check-domain/{fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/check-domain/somedomain.ru"
+Примеры ответа
+200400401429500
+Content type
+application/json
+
+Копировать
+{
+"is_domain_available": true,
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Добавление домена на аккаунт
+Чтобы добавить домен на свой аккаунт, отправьте запрос POST на /api/v1/add-domain/{fqdn}.
+
+Авторизация:
+Bearer
+path Parameters
+fqdn
+required
+string
+Пример: somedomain.ru
+Полное имя домена.
+
+Ответы
+204 Домен успешно добавлен на ваш аккаунт.
+400 Некорректный запрос
+401 Не авторизован
+409 Конфликт
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+post
+/api/v1/add-domain/{fqdn}
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v1/add-domain/somedomain.ru"
+Примеры ответа
+400401409429500
+Content type
+application/json
+
+Копировать
+{
+"status_code": 400,
+"message": "Value must be a number conforming to the specified constraints",
+"error_code": "bad_request",
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}
+Локации
+Локация - это конкретное физическое местоположение дата-центра.
+
+Получение списка локаций
+Чтобы получить список локаций, отправьте GET-запрос на /api/v2/locations.
+
+Тело ответа будет представлять собой объект JSON с ключом locations.
+
+Авторизация:
+Bearer
+Ответы
+200 Объект JSON c ключом locations
+400 Некорректный запрос
+401 Не авторизован
+403 Запрещено
+429 Слишком много запросов
+500 Внутренняя ошибка сервера
+АвторизацияВыполнить запрос
+get
+/api/v2/locations
+Примеры запроса
+cURLJavaScriptNodePythonPHPGoJava
+
+Копировать
+curl -X GET \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TIMEWEB_CLOUD_TOKEN" \
+  "https://api.timeweb.cloud/api/v2/locations"
+Примеры ответа
+200400401403429500
+Content type
+application/json
+
+Копировать
+Развернуть всёСвернуть всё
+{
+"meta": {
+"total": 10
+},
+"locations": [
+{}
+],
+"response_id": "15095f25-aac3-4d60-a788-96cb5136f186"
+}

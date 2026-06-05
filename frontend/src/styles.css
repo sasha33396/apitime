@@ -1,0 +1,135 @@
+:root {
+  color-scheme: light dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  background: #f5f6f8;
+  color: #1a1a1a;
+}
+header {
+  background: #0b5fff;
+  color: #fff;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.acc {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.acc h2 {
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 16px;
+  background: #eef2ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.acc h2 .dom {
+  font-weight: 400;
+  color: #555;
+  font-size: 13px;
+}
+.rec {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 18px;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: #0b5fff;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.sub {
+  flex: 1 1 140px;
+  color: #444;
+  font-size: 13px;
+}
+.rec input,
+.addrow input {
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 150px;
+}
+button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.save {
+  background: #0b5fff;
+  color: #fff;
+}
+.del {
+  background: #ffe0e0;
+  color: #b00;
+}
+.add {
+  background: #e8f5e9;
+  color: #1b7a2e;
+}
+.addrow {
+  padding: 12px 18px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fafafa;
+  flex-wrap: wrap;
+}
+.muted {
+  color: #888;
+  font-size: 13px;
+  padding: 10px 18px;
+}
+.err {
+  color: #b00;
+  font-size: 13px;
+  padding: 10px 18px;
+}
+.reload {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}

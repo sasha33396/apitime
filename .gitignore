@@ -1,0 +1,15 @@
+# секреты
+.env
+config.json
+
+# зависимости и сборки
+node_modules/
+dist/
+*.log
+
+# мусор
+__pycache__/
+*.pyc
+
+# локальные настройки редактора/Claude
+.claude/
