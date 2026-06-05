@@ -6,6 +6,9 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Доверяем заголовкам прокси (X-Forwarded-Proto от Caddy) — нужно, чтобы
+  // cookie сессии корректно помечалась Secure при работе по HTTPS.
+  app.set('trust proxy', 1);
   app.setGlobalPrefix('api');
 
   // Статика собранного фронтенда (React) лежит рядом, в ../public.

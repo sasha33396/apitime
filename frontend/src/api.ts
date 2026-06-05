@@ -1,3 +1,11 @@
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export async function api<T = any>(
   method: string,
   url: string,
@@ -11,7 +19,7 @@ export async function api<T = any>(
   const data = await res.json().catch(() => ({}) as any);
   if (!res.ok) {
     const msg = data?.message || data?.error || `Ошибка ${res.status}`;
-    throw new Error(Array.isArray(msg) ? msg.join(', ') : String(msg));
+    throw new ApiError(Array.isArray(msg) ? msg.join(', ') : String(msg), res.status);
   }
   return data as T;
 }
