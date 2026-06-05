@@ -4,73 +4,108 @@
 Timeweb Cloud, без постоянного переключения между личными кабинетами.
 
 - **Frontend** — React + Vite + TypeScript
-- **Backend** — NestJS (прокси к Timeweb API, хранит токены на сервере)
-- **Caddy** — обратный прокси, автоматический HTTPS (Let's Encrypt), basic_auth
-- **docker compose** — запуск всего одной командой
+- **Backend** — NestJS: отдаёт API (прокси к Timeweb) и статику фронтенда
+- Один docker-образ, один контейнер на порту **3000**
+- HTTPS и вход по паролю обеспечивает **уже работающий на сервере Caddy**
+  (проект reshala-web) — apitime подключается к его docker-сети.
 
 ```
-браузер ──HTTPS──> Caddy ──┬── /api/* ──> backend (NestJS) ──> api.timeweb.cloud
-                           └── остальное ─> статика React
+браузер ─HTTPS─> Caddy (reshala-web) ──reverse_proxy──> apitime:3000
+                  (basic_auth, TLS)                       ├── /api/* → NestJS
+                                                          └── /     → статика React → api.timeweb.cloud
 ```
 
 ## Структура
 
 ```
-backend/      NestJS API
-frontend/     React + сборка статики в образ Caddy
-Caddyfile     конфиг обратного прокси (домен, TLS, basic_auth)
-docker-compose.yml
-.env.example  шаблон настроек (скопировать в .env)
+Dockerfile          сборка фронтенда + бэкенда в один образ
+docker-compose.yml  один сервис apitime, подключённый к сети Caddy
+backend/            NestJS
+frontend/           React
+.env.example        шаблон (скопировать в .env)
 ```
 
-## Настройка и запуск (на сервере)
+## Деплой за общим Caddy (текущая конфигурация сервера)
 
-1. **DNS.** Заведите поддомен для самого приложения (например `dns.example.com`)
-   и направьте его A-записью на IP сервера. Откройте порты **80** и **443**.
+На сервере уже крутится проект **reshala-web** со своим Caddy на портах 80/443.
+apitime НЕ поднимает свой Caddy, а встраивается в существующий.
 
-2. **Конфиг.** Скопируйте шаблон и заполните:
-   ```bash
-   cp .env.example .env
-   nano .env
-   ```
-   - `APP_DOMAIN` — домен приложения из шага 1.
-   - `BASIC_AUTH_USER` — логин для входа.
-   - `BASIC_AUTH_HASH` — хэш пароля, получить командой:
-     ```bash
-     docker run --rm caddy caddy hash-password --plaintext 'ваш-пароль'
-     ```
-   - `TW_ACCOUNT_N_*` — имя, токен и домен для каждого аккаунта Timeweb.
-     Токен: панель Timeweb Cloud → «API и Terraform» → создать токен.
+### 1. DNS
 
-3. **Запуск:**
-   ```bash
-   docker compose up -d --build
-   ```
-   Откройте `https://APP_DOMAIN`, введите логин/пароль — увидите оба домена
-   и их A-записи. Меняете значение → «Сохранить».
+Заведите поддомен для приложения, например `apitime.xendroweb.com`,
+и направьте его **A-записью на IP сервера**.
 
-4. **Остановить / обновить:**
-   ```bash
-   docker compose down          # остановить
-   docker compose up -d --build # пересобрать и поднять заново
-   ```
+### 2. Конфиг apitime
+
+```bash
+git clone https://github.com/sasha33396/apitime.git
+cd apitime
+cp .env.example .env
+nano .env        # вписать TW_ACCOUNT_* (токены и домены аккаунтов)
+```
+
+Проверьте имя docker-сети существующего Caddy:
+```bash
+docker network ls          # ищите что-то вроде reshala-web_default
+```
+Если оно отличается от `reshala-web_default` — задайте `CADDY_NETWORK=...` в `.env`.
+
+### 3. Запуск контейнера
+
+```bash
+docker compose up -d --build
+```
+Контейнер `apitime` поднимется в сети Caddy и будет доступен внутри неё как
+`apitime:3000` (наружу порты не публикуются).
+
+### 4. Добавить поддомен в Caddyfile reshala-web
+
+Сгенерируйте хэш пароля для входа:
+```bash
+docker run --rm caddy caddy hash-password --plaintext 'ВАШ_ПАРОЛЬ'
+```
+
+В файл `/root/reshala-web/reshala-web/Caddyfile` добавьте новый блок
+(подставьте свой поддомен, логин и хэш):
+
+```caddy
+apitime.xendroweb.com {
+        basic_auth {
+                admin <ВСТАВЬТЕ_ХЭШ_ПАРОЛЯ>
+        }
+        reverse_proxy apitime:3000
+}
+```
+
+Перечитайте конфиг Caddy (из папки reshala-web):
+```bash
+cd /root/reshala-web/reshala-web
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Откройте `https://apitime.xendroweb.com`, введите логин/пароль — увидите оба
+домена и их A-записи. Меняете значение → «Сохранить».
+
+### Обновление кода
+
+```bash
+cd apitime
+git pull
+docker compose up -d --build
+```
 
 ## Локальная разработка (без Docker)
 
-Два терминала:
-
 ```bash
-# 1) бэкенд
-cd backend
-npm install
-# токены берутся из окружения; на Windows PowerShell, например:
+# терминал 1 — бэкенд
+cd backend && npm install
+#   задать токены в окружении, напр. (PowerShell):
 #   $env:TW_ACCOUNT_1_TOKEN="..."; $env:TW_ACCOUNT_1_DOMAIN="dom.ru"; $env:TW_ACCOUNT_1_NAME="Acc1"
-npm run start:dev
+npm run start:dev          # http://localhost:3000
 
-# 2) фронтенд (Vite проксирует /api на http://localhost:3000)
-cd frontend
-npm install
-npm run dev
+# терминал 2 — фронтенд (Vite проксирует /api на :3000)
+cd frontend && npm install
+npm run dev                # http://localhost:5173
 ```
 
 ## Что приложение умеет
@@ -80,15 +115,12 @@ npm run dev
 - добавляет новую A-запись на корень домена (`POST`);
 - удаляет A-запись (`DELETE`).
 
-Под капотом — эндпоинты Timeweb Cloud:
+Эндпоинты Timeweb Cloud:
 `GET /api/v1/domains/{fqdn}/dns-records`,
 `POST|PATCH|DELETE /api/v2/domains/{fqdn}/dns-records[/{id}]`.
 
 ## Безопасность
 
-- Токены хранятся только в `.env` на сервере и в память бэкенда — в браузер не попадают.
-- Вход защищён basic_auth на уровне Caddy.
-- `.env` и `config.json` добавлены в `.gitignore` — не коммитьте их.
-
-> Прежняя однофайловая версия на Python (`server.py`, `config.example.json`)
-> больше не нужна — её можно удалить.
+- Токены только в `.env` на сервере и в памяти бэкенда — в браузер не попадают.
+- Вход защищён basic_auth на уровне общего Caddy.
+- `.env` и `config.json` в `.gitignore` — не коммитьте их.

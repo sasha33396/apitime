@@ -1,25 +1,17 @@
 services:
-  backend:
-    build: ./backend
+  apitime:
+    build: .
     restart: unless-stopped
     env_file: .env
     expose:
       - "3000"
+    networks:
+      - proxy
 
-  web:
-    build: ./frontend
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
-  caddy_data:
-  caddy_config:
+# Подключаемся к уже существующей docker-сети, в которой работает Caddy
+# проекта reshala-web. Имя сети можно переопределить через CADDY_NETWORK в .env.
+# Узнать имя: docker network ls  (обычно <папка-проекта>_default).
+networks:
+  proxy:
+    external: true
+    name: ${CADDY_NETWORK:-reshala-web_default}

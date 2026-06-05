@@ -1,13 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
+
+  // Статика собранного фронтенда (React) лежит рядом, в ../public.
+  // Запросы /api/* обрабатывают контроллеры, остальное отдаётся как файлы,
+  // а корень "/" — это index.html.
+  app.useStaticAssets(join(__dirname, '..', 'public'));
+
   const port = Number(process.env.PORT) || 3000;
   await app.listen(port, '0.0.0.0');
-  Logger.log(`Backend слушает на порту ${port}`, 'Bootstrap');
+  Logger.log(`Приложение слушает на порту ${port}`, 'Bootstrap');
 }
 
 bootstrap();
