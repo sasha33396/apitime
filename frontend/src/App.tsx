@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from './api';
 import Login from './Login';
+import History from './History';
 
 interface AccountInfo {
   name: string;
@@ -15,9 +16,11 @@ interface Rec {
 }
 
 type AuthState = 'checking' | 'in' | 'out';
+type View = 'records' | 'history';
 
 export default function App() {
   const [auth, setAuth] = useState<AuthState>('checking');
+  const [view, setView] = useState<View>('records');
   const [accounts, setAccounts] = useState<AccountInfo[] | null>(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -71,6 +74,9 @@ export default function App() {
   if (auth === 'out') {
     return <Login onSuccess={() => setAuth('in')} />;
   }
+  if (view === 'history') {
+    return <History onBack={() => setView('records')} onUnauthorized={onUnauthorized} />;
+  }
 
   return (
     <div>
@@ -79,6 +85,9 @@ export default function App() {
         <span className="header-actions">
           <button className="reload" onClick={loadAccounts}>
             обновить
+          </button>
+          <button className="reload" onClick={() => setView('history')}>
+            история
           </button>
           <button className="reload" onClick={logout}>
             выйти
@@ -145,16 +154,18 @@ function AccountCard({
     load();
   }, [load]);
 
-  async function onSave(r: Rec, value: string, ttl: number) {
+  async function onSave(r: Rec, oldValue: string, value: string, ttl: number): Promise<boolean> {
     try {
       await api(
         'PATCH',
         `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}`,
-        { value, ttl },
+        { value, oldValue, ttl },
       );
       notify(`Сохранено: ${r.fqdn} → ${value} (TTL ${ttl})`);
+      return true;
     } catch (e: any) {
       handleError(e);
+      return false;
     }
   }
 
@@ -163,7 +174,7 @@ function AccountCard({
     try {
       await api(
         'DELETE',
-        `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}`,
+        `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}&old=${encodeURIComponent(r.value)}`,
       );
       notify('Удалено');
       load();
@@ -253,17 +264,19 @@ function RecordRow({
 }: {
   rec: Rec;
   domain: string;
-  onSave: (r: Rec, value: string, ttl: number) => Promise<void>;
+  onSave: (r: Rec, oldValue: string, value: string, ttl: number) => Promise<boolean>;
   onDelete: (r: Rec) => void;
 }) {
   const [value, setValue] = useState(rec.value);
+  const [savedValue, setSavedValue] = useState(rec.value);
   const [ttl, setTtl] = useState(String(rec.ttl ?? 60));
   const [busy, setBusy] = useState(false);
   const label = rec.fqdn === domain ? '@ (корень)' : rec.fqdn;
 
   async function handleSave() {
     setBusy(true);
-    await onSave(rec, value, Number(ttl) || 60);
+    const ok = await onSave(rec, savedValue, value, Number(ttl) || 60);
+    if (ok) setSavedValue(value);
     setBusy(false);
   }
 

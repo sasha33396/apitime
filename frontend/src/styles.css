@@ -145,6 +145,41 @@ button:disabled {
   text-align: center;
   margin-top: 40px;
 }
+
+/* ── Таблица истории ── */
+.hist {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.hist th,
+.hist td {
+  text-align: left;
+  padding: 9px 14px;
+  border-top: 1px solid #f0f0f0;
+}
+.hist thead th {
+  background: #eef2ff;
+  border-top: 0;
+  font-size: 12px;
+  color: #555;
+}
+.hist .mono {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+.hist .nowrap {
+  white-space: nowrap;
+}
+.hist .arrow {
+  color: #0b5fff;
+  padding: 0 2px;
+}
+.hist tr.act-create td {
+  background: #f3fbf4;
+}
+.hist tr.act-delete td {
+  background: #fff5f5;
+}
 .header-actions {
   display: flex;
   gap: 8px;
