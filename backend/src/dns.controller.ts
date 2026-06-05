@@ -65,7 +65,7 @@ export class DnsController {
     const value = (body?.value || '').trim();
     if (!value) throw new BadRequestException('Не указан IP-адрес');
     const fqdn = this.buildFqdn(acc, body?.subdomain);
-    await this.tw.create(acc, fqdn, value, body?.ttl || 600);
+    await this.tw.create(acc, fqdn, value, Number(body?.ttl) || 60);
     return { ok: true };
   }
 
@@ -80,7 +80,7 @@ export class DnsController {
     const value = (body?.value || '').trim();
     if (!value) throw new BadRequestException('Не указан IP-адрес');
     if (!fqdn) throw new BadRequestException('Не указан fqdn записи');
-    await this.tw.update(acc, fqdn, Number(id), value, body?.ttl || 600);
+    await this.tw.update(acc, fqdn, Number(id), value, Number(body?.ttl) || 60);
     return { ok: true };
   }
 

@@ -122,6 +122,7 @@ function AccountCard({
   const [error, setError] = useState('');
   const [newSub, setNewSub] = useState('');
   const [newIp, setNewIp] = useState('');
+  const [newTtl, setNewTtl] = useState('60');
   const [busy, setBusy] = useState(false);
 
   function handleError(e: any) {
@@ -144,14 +145,14 @@ function AccountCard({
     load();
   }, [load]);
 
-  async function onSave(r: Rec, value: string) {
+  async function onSave(r: Rec, value: string, ttl: number) {
     try {
       await api(
         'PATCH',
         `/api/records?account=${index}&fqdn=${encodeURIComponent(r.fqdn)}&id=${r.id}`,
-        { value, ttl: r.ttl || 600 },
+        { value, ttl },
       );
-      notify(`Сохранено: ${r.fqdn} → ${value}`);
+      notify(`Сохранено: ${r.fqdn} → ${value} (TTL ${ttl})`);
     } catch (e: any) {
       handleError(e);
     }
@@ -181,10 +182,11 @@ function AccountCard({
       await api('POST', `/api/records?account=${index}`, {
         subdomain: newSub.trim(),
         value: newIp.trim(),
-        ttl: 600,
+        ttl: Number(newTtl) || 60,
       });
       setNewSub('');
       setNewIp('');
+      setNewTtl('60');
       notify('Добавлено');
       load();
     } catch (e: any) {
@@ -226,6 +228,15 @@ function AccountCard({
           onChange={(e) => setNewIp(e.target.value)}
           placeholder="IP адрес"
         />
+        <input
+          className="ttl-input"
+          type="number"
+          min={1}
+          value={newTtl}
+          onChange={(e) => setNewTtl(e.target.value)}
+          placeholder="TTL"
+          title="TTL, сек"
+        />
         <button className="add" disabled={busy} onClick={onAdd}>
           Добавить
         </button>
@@ -242,16 +253,17 @@ function RecordRow({
 }: {
   rec: Rec;
   domain: string;
-  onSave: (r: Rec, value: string) => Promise<void>;
+  onSave: (r: Rec, value: string, ttl: number) => Promise<void>;
   onDelete: (r: Rec) => void;
 }) {
   const [value, setValue] = useState(rec.value);
+  const [ttl, setTtl] = useState(String(rec.ttl ?? 60));
   const [busy, setBusy] = useState(false);
   const label = rec.fqdn === domain ? '@ (корень)' : rec.fqdn;
 
   async function handleSave() {
     setBusy(true);
-    await onSave(rec, value);
+    await onSave(rec, value, Number(ttl) || 60);
     setBusy(false);
   }
 
@@ -265,6 +277,14 @@ function RecordRow({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="IP адрес"
+      />
+      <input
+        className="ttl-input"
+        type="number"
+        min={1}
+        value={ttl}
+        onChange={(e) => setTtl(e.target.value)}
+        title="TTL, сек"
       />
       <button className="save" disabled={busy} onClick={handleSave}>
         {busy ? '…' : 'Сохранить'}
